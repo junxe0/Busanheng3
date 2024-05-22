@@ -32,28 +32,32 @@ int percent_input(void);
 int stm_inpput(void);
 void start_msg(void);
 void count_line(int);
-void train_box(int, int, int, int);
-int c_move(int, int, int, int*, int*, int*, int*);
+void train_box(int, int, int, int, int, int, int, int, int, int);
+void train_box2(int, int, int, int);
+void train_box3(int, int, int, int, int);
+void train_box4(int, int, int, int, int, int, int);
+void train_box5(int, int, int, int, int, int, int);
+int c_move(int, int, int, int*, int*);
 int c_aggroMinMax(int);
-int z_move(int, int, int, int, int, int, int, int*, int*, int*);
+int z_move(int, int, int, int, int, int, int, int*, int*);
 int z_movewhere(int, int, int, int, int, int*);
 void c_moveresult(int, int, int, int, int);
 void z_moveresult(int, int, int);
 int m_move_inpput(int, int);
-int m_movef(int, int, int, int*, int*, int*, int*);
+int m_movef(int, int, int, int*, int*);
 int m_aggroMinMax(int);
 void m_moveresult(int, int, int, int, int);
 int c_action(int, int);
-int z_who_atk(int, int, int, int*, int*);
-int z_who_atk2(int, int, int, int, int*, int*);
-int z_action(int, int, int, int, int, int, int*, int*, int*);
+int z_action(int, int, int, int, int, int, int, int, int*, int*, int*);
+int z_who_atk(int, int, int, int, int, int*, int*, int*);
+int z_who_atk2(int, int, int, int, int, int, int*, int*);
 void ATK_f(int, int, int, int, int, int);
 int m_action_inpput(int, int);
 int m_actionf(int, int, int, int, int, int, int*, int*, int*);
 int m_pull(int, int, int, int*);
 int m_stmMinMax(int);
 int m_actionmsg(int, int, int, int, int, int);
-void czm_repos(int, int, int*, int*, int*);
+void czm_repos(int, int, int, int, int, int*, int*, int*);
 
 int main(void) {
 	intro(); // 콘솔창 이름 변경
@@ -67,14 +71,16 @@ int main(void) {
 
 	srand((unsigned int)time(NULL)); // 난수 초기화
 
-	int c_pos, z_pos, m_pos, stage;
-	c_pos = train_length - 5; // 시민 초기 위치
-	z_pos = train_length - 2; // 좀비 초기 위치
-	m_pos = train_length - 1; // 마동석 초기 위치
-	stage = 1;
+	int c_pos = train_length - 5; // 시민 초기 위치
+	int c2_pos = train_length / 2; // 시민 2 초기 위치
+	int c3_pos = train_length / 4; // 시민 3 초기 위치
+	int v_pos = train_length - 4; // 빌런 초기 위치
+	int z_pos = train_length - 2; // 좀비 초기 위치
+	int m_pos = train_length - 1; // 마동석 초기 위치
+	int stage = 1; // 스테이지
+	int c_alive = 3; // 시민 생존
 
-	count_line(count); // ~번째
-	train_box(train_length, c_pos, z_pos, m_pos); // 기차 상자
+	train_box(count, train_length, stage, c_alive, c3_pos, c2_pos, c_pos, v_pos, z_pos, m_pos); // 기차 상자
 
 	int c_bpos = 0, z_bpos = 0, m_bpos = 0; // 이동 전 좌표
 
@@ -84,54 +90,52 @@ int main(void) {
 
 	int c_result = 0, z_result = 0, ATK = 0; // 이동 결과
 
+	int c_baggro = 0, _c_aggro = 0; // 시민 반환 값
+	int	c_bpos = 0, _c_pos = 0;
+	int	_c_alive = 0;
+
+	int	z_bpos = 0, _z_pos = 0;
+	int	z_action_r = 0;
+	int _zombie = 0;
+
+	int	_m_aggro = 0, m_baggro = 0;
+	int	_m_pos = 0;
+	int	_stm = 0;
+
 	while (1) { // 반복
-		count++; // 턴 추가
-		zombie++; // 붙잡기
-
-		int _c_aggro, _c_pos, c_baggro, c_bpos;
-		c_result = c_move(p, c_aggro, c_pos, &_c_aggro, &_c_pos, &c_baggro, &c_bpos); // 시민 이동
-		c_pos = _c_pos;
-		c_aggro = c_aggroMinMax(_c_aggro); // 시민 어그로 최댓값, 최솟값 확인
-
-		int _zombie, _z_pos, z_bpos;
-		z_result = z_move(count, zombie, m_aggro, c_aggro, c_pos, z_pos, m_pos, &_zombie, &_z_pos, &z_bpos); // 좀비 이동
-		zombie = _zombie;
-		z_pos = _z_pos;
-
-		count_line(count); // ~번째
-		train_box(train_length, c_pos, z_pos, m_pos); // 기차 상자
+		++count /* 턴 */, ++zombie; /* 붙잡기 */
+		c_baggro = c_aggro, c_bpos = c_pos; // 전 값 지정
+		c_result = c_move(p, c_aggro, c_pos, &_c_aggro, &_c_pos); // 시민 이동
+		c_aggro = c_aggroMinMax(_c_aggro), c_pos = _c_pos, z_bpos = z_pos; // 반환 값 정리 및 값 지정
+		z_result = z_move(count, zombie, m_aggro, c_aggro, c_pos, z_pos, m_pos, &_zombie, &_z_pos); // 좀비 이동
+		zombie = _zombie, z_pos = _z_pos; // 반환 값 정리
+		train_box(count, train_length, stage, c_alive, c3_pos, c2_pos, c_pos, v_pos, z_pos, m_pos); // 기차 상자
 
 		c_moveresult(c_result, c_bpos, c_pos, c_baggro, c_aggro); // 시민 이동 출력
 		z_moveresult(z_result, z_bpos, z_pos); // 좀비 이동 출력
 
-		m_move = m_move_inpput(m_pos, z_pos); // 마동석 이동 선택
+		m_move = m_move_inpput(m_pos, z_pos), m_bpos = m_pos, m_baggro = m_aggro;
+		m_movef(m_move, m_aggro, m_pos, &_m_aggro, &_m_pos); // 마동석 이동
+		m_aggro = m_aggroMinMax(_m_aggro), m_pos = _m_pos; // 반환 값 정리
 
-		int _m_aggro, _m_pos, m_baggro;
-		m_movef(m_move, m_aggro, m_pos, &_m_aggro, &_m_pos, &m_baggro, &m_bpos); // 마동석 이동
-		m_aggro = m_aggroMinMax(_m_aggro); // 마동석 어그로 최댓값, 최솟값 확인
-		m_pos = _m_pos;
+		train_box(count, train_length, stage, c_alive, c3_pos, c2_pos, c_pos, v_pos, z_pos, m_pos); // 기차 상자
 
-		train_box(train_length, c_pos, z_pos, m_pos); // 기차 상자
+		m_moveresult(m_move, m_bpos, m_pos, m_baggro, m_aggro), stage = c_action(c_pos, stage); // 결과 표시 및 행동
 
-		m_moveresult(m_move, m_bpos, m_pos, m_baggro, m_aggro); // 마동석 이동 출력
-
-		stage = c_action(c_pos, stage); // 시민 행동 출력
-		int z_action_r, _stm;
-		z_action_r = z_action(z_pos, c_pos, m_pos, m_aggro, c_aggro, stm, &bstm, &_stm, &ATK); // 좀비 행동 출력
-		stm = _stm;
+		bstm = stm; // 전 체력 값 지정
+		z_action_r = z_action(z_pos, c_pos, m_pos, m_aggro, c_aggro, stm, c_alive, stage, &_stm, &ATK, &_c_alive); // 좀비 행동 출력
+		stm = _stm, c_alive = _c_alive; // 반환 값 정리
 
 		ATK_f(z_action_r, m_aggro, c_aggro, bstm, stm, ATK); // 공격 확인
 
-		m_baggro = m_aggro; /* 어그로 */
-		bstm = stm; /* 체력 */
+		m_baggro = m_aggro, bstm = stm; // 전 값 지정
 		m_action = m_action_inpput(m_pos, z_pos); // 마동석 행동 선택
 		m_action_f = m_actionf(count, zombie, m_action, m_aggro, p, stm, &_zombie, &_m_aggro, &_stm); // 마동석 행동
-		zombie = _zombie;
-		m_aggro = m_aggroMinMax(_m_aggro); // 마동석 어그로 최댓값, 최솟값 확인
-		stm = m_stmMinMax(_stm); // 마동석 체력 최댓값, 최솟값 확인
+		zombie = _zombie, m_aggro = m_aggroMinMax(_m_aggro), stm = m_stmMinMax(_stm); // 마동석 체력 최댓값, 최솟값 확인
 		m_actionmsg(m_action_f, m_pos, m_baggro, m_aggro, bstm, stm); // 마동석 행동 출력
 
-		czm_repos(stage, train_length, &c_pos, &z_pos, &m_pos); // 위치 재 지정
+		czm_repos(stage, train_length, c_pos, z_pos, m_pos, &_c_pos, &_z_pos, &_m_pos); // 위치 재 지정
+		c_pos = _c_pos, z_pos = _z_pos, m_pos = _m_pos; // 반환 값 정리
 	}
 	return 0;
 }
@@ -186,6 +190,14 @@ void start_msg(void) { // 게임 시작
 	printf("\n\n");
 }
 
+void train_box(int count, int train_length, int stage, int c_alive, int c3_pos, int c2_pos, int c_pos, int v_pos, int z_pos, int m_pos) { // 기차 상자
+	count_line(count); // ~번째
+	if (stage == 1) { train_box2(train_length, c_pos, z_pos, m_pos); }
+	else if (stage == 2) { train_box3(train_length, c_pos, v_pos, z_pos, m_pos); }
+	else if (stage == 3) { train_box4(train_length, c_alive, c3_pos, c2_pos, c_pos, z_pos, m_pos); }
+	else if (stage == 4) { train_box5(train_length, c_alive, c3_pos, c2_pos, c_pos, z_pos, m_pos); }
+}
+
 void count_line(int count) { // ~번째 턴
 	if (count <= 0) {
 		printf("--------------- 초 기 상 태 ---------------\n");
@@ -195,40 +207,77 @@ void count_line(int count) { // ~번째 턴
 	}
 }
 
-void train_box(int train_length, int c_pos, int z_pos, int m_pos) { // 기차 상자
+void train_box2(int train_length, int c_pos, int z_pos, int m_pos) { // 기차 상자
 	for (int i = 1; i <= 3; i++) {
 		for (int i2 = 1; i2 <= train_length; i2++) {
-			if ((i == 1) || (i == 3) || ((i == 2) & ((i2 == train_length)) || (i2 == 1))) {
-				printf("#");
-			}
-			else if ((i == 2) & (i2 == c_pos)) {
-				printf("C");
-			}
-			else if ((i == 2) & (i2 == z_pos)) {
-				printf("Z");
-			}
-			else if ((i == 2) & (i2 == m_pos)) {
-				printf("M");
-			}
-			else if (i == 2) {
-				printf(" ");
-			}
+			if ((i == 1) || (i == 3) || ((i == 2) & ((i2 == train_length)) || (i2 == 1))) { printf("#"); }
+			else if ((i == 2) & (i2 == c_pos)) { printf("C"); }
+			else if ((i == 2) & (i2 == z_pos)) { printf("Z"); }
+			else if ((i == 2) & (i2 == m_pos)) { printf("M"); }
+			else if (i == 2) { printf(" "); }
 		}
 		printf("\n");
 	}
 	printf("\n\n");
 }
 
-int c_move(int p, int c_aggro, int c_pos, int* _c_aggro, int* _c_pos, int* c_baggro, int* c_bpos) { // 시민 이동
+void train_box3(int train_length, int c_pos, int v_pos, int z_pos, int m_pos) { // 기차 상자
+	for (int i = 1; i <= 3; i++) {
+		for (int i2 = 1; i2 <= train_length; i2++) {
+			if ((i == 1) || (i == 3) || ((i == 2) & ((i2 == train_length)) || (i2 == 1))) { printf("#"); }
+			else if ((i == 2) & (i2 == c_pos)) { printf("C"); }
+			else if ((i == 2) & (i2 == v_pos)) { printf("V"); }
+			else if ((i == 2) & (i2 == z_pos)) { printf("Z"); }
+			else if ((i == 2) & (i2 == m_pos)) { printf("M"); }
+			else if (i == 2) { printf(" "); }
+		}
+		printf("\n");
+	}
+	printf("\n\n");
+}
+
+void train_box4(int train_length, int c_alive, int c3_pos, int c2_pos, int c_pos, int z_pos, int m_pos) { // 기차 상자
+	for (int i = 1; i <= 3; i++) {
+		for (int i2 = 1; i2 <= train_length; i2++) {
+			if ((i == 1) || (i == 3) || ((i == 2) & ((i2 == train_length)) || (i2 == 1))) { printf("#"); }
+			else if ((i == 2) & (i2 == c3_pos) & (c_alive == 1)) { printf("C"); }
+			else if ((i == 2) & (i2 == c2_pos) & (c_alive == 2)) { printf("C"); }
+			else if ((i == 2) & (i2 == c_pos) & (c_alive == 3)) { printf("C"); }
+			else if ((i == 2) & (i2 == z_pos)) { printf("Z"); }
+			else if ((i == 2) & (i2 == m_pos)) { printf("M"); }
+			else if (i == 2) { printf(" "); }
+		}
+		printf("\n");
+	}
+	printf("\n\n");
+}
+
+void train_box5(int train_length, int c_alive, int c3_pos, int c2_pos, int c_pos, int z_pos, int m_pos) { // 기차 상자
+	for (int i = 1; i <= 3; i++) {
+		for (int i2 = 1; i2 <= train_length; i2++) {
+			if ((i == 1) || (i == 3) || ((i == 2) & ((i2 == train_length)) || (i2 == 1))) { printf("#"); }
+			else if ((i == 2) & (i2 == c3_pos) & (c_alive == 1)) { printf("C"); }
+			else if ((i == 2) & (i2 == c2_pos) & (c_alive == 1)) { printf("M"); }
+			else if ((i == 2) & (i2 == c2_pos) & (c_alive == 2)) { printf("C"); }
+			else if ((i == 2) & (i2 == c_pos) & (c_alive == 2)) { printf("M"); }
+			else if ((i == 2) & (i2 == c_pos) & (c_alive == 3)) { printf("C"); }
+			else if ((i == 2) & (i2 == z_pos)) { printf("Z"); }
+			else if ((i == 2) & (i2 == m_pos)) { printf("M"); }
+			else if (i == 2) { printf(" "); }
+		}
+		printf("\n");
+	}
+	printf("\n\n");
+}
+
+int c_move(int p, int c_aggro, int c_pos, int* _c_aggro, int* _c_pos) { // 시민 이동
 	int c_per = rand() % 100 + 1;
-	*c_baggro = c_aggro; // 어그로
 	if (c_per <= p) {
 		*_c_pos = c_pos; // 위치
 		*_c_aggro = --c_aggro; // 어그로
 		return 0; // 결과 출력
 	}
 	else if (c_per > p) {
-		*c_bpos = c_pos; // 위치
 		*_c_pos = c_pos - 1;
 		*_c_aggro = ++c_aggro;
 		return 1; // 결과 출력
@@ -247,9 +296,8 @@ int c_aggroMinMax(int _c_aggro) { // 시민 어그로 최솟값 최댓값 판단
 	}
 }
 
-int z_move(int count, int zombie, int m_aggro, int c_aggro, int c_pos, int z_pos, int m_pos, int* _zombie, int* _z_pos, int* z_bpos) { // 좀비 이동
+int z_move(int count, int zombie, int m_aggro, int c_aggro, int c_pos, int z_pos, int m_pos, int* _zombie, int* _z_pos) { // 좀비 이동
 	int _z_pos_, result;
-	*z_bpos = z_pos; // 좀비 이동 전 위치 반환
 	*_zombie = zombie;
 	if (count % 2 != 0) {
 		if (count < zombie) {
@@ -336,15 +384,13 @@ int m_move_inpput(int m_pos, int z_pos) { // 마동석 이동 선택
 	return m_move;
 }
 
-int m_movef(int m_move, int m_aggro, int m_pos, int* _m_aggro, int* _m_pos, int* m_baggro, int* m_bpos) {
-	*m_baggro = m_aggro; // 어그로
+int m_movef(int m_move, int m_aggro, int m_pos, int* _m_aggro, int* _m_pos) {
 	if (m_move == MOVE_STAY) {
 		*_m_pos = m_pos; // 위치
 		*_m_aggro = --m_aggro;
 		return 0; // 결과 출력
 	}
 	else if (m_move == MOVE_LEFT) {
-		*m_bpos = m_pos; // 위치
 		*_m_pos = m_pos - 1;
 		*_m_aggro = ++m_aggro;
 		return 1; // 결과 출력
@@ -374,11 +420,11 @@ void m_moveresult(int m_result, int m_bpos, int m_pos, int m_baggro, int m_aggro
 
 int c_action(int c_pos, int stage) { // 시민 행동 출력
 	if (c_pos == 2) {
-		if (stage < 3) {
+		if (stage < 4) {
 			printf("탈출 성공!!!\n시민이 다음 스테이지로 진출합니다.\n");
 			stage++;
 		}
-		else if (stage >= 3) {
+		else if (4 <= stage) {
 			printf("You Win!!!\n시민이 탈출에 성공하였습니다.\n");
 			exit(0);
 		}
@@ -389,21 +435,17 @@ int c_action(int c_pos, int stage) { // 시민 행동 출력
 	return stage;
 }
 
-int z_action(int z_pos, int c_pos, int m_pos, int m_aggro, int c_aggro, int stm, int* bstm, int* _stm, int* ATK) { // 좀비 행동 출력
-	*bstm = stm; // 변경 전 체력
+int z_action(int z_pos, int c_pos, int m_pos, int m_aggro, int c_aggro, int stm, int c_alive, int stage, int* _stm, int* ATK, int* _c_alive) { // 좀비 행동 출력
 	*_stm = stm; // 체력 변경이 없다면 체력 다시 반환
+	int result, _stm_ = 0, _ATK = 0, _c_alive_ = 0;
 	if ((c_pos == (z_pos - 1)) && (m_pos == (z_pos + 1))) {
-		int result, _stm_, _ATK;
-		result = z_who_atk(m_aggro, c_aggro, stm, &_stm_, &_ATK);
-		*_stm = _stm_; // 체력 변경
-		*ATK = _ATK; // 둘다 인접 여부
+		result = z_who_atk(m_aggro, c_aggro, stm, c_alive, stage, &_stm_, &_ATK, &_c_alive_);
+		*_stm = _stm_; /* 체력 변경 */ *ATK = _ATK; /* 둘다 인접 여부 */
 		return result;
 	}
 	else if ((c_pos == (z_pos - 1)) || (m_pos == (z_pos + 1))) {
-		int result, _stm_, _ATK;
-		result = z_who_atk2(c_pos, z_pos, m_pos, stm, &_stm_, &_ATK);
-		*_stm = _stm_; // 체력 변경
-		*ATK = _ATK; // 둘다 인접 여부
+		result = z_who_atk2(c_pos, z_pos, m_pos, stm, c_alive, stage, &_stm_, &_c_alive_);
+		*_stm = _stm_; /* 체력 변경 */ *ATK = 0; /* 둘다 인접 여부 */ *_c_alive = _c_alive_; /* 시민 생존 숫자 */
 		return result;
 	}
 	else {
@@ -411,24 +453,31 @@ int z_action(int z_pos, int c_pos, int m_pos, int m_aggro, int c_aggro, int stm,
 	}
 }
 
-int z_who_atk(int m_aggro, int c_aggro, int stm, int* _stm_, int* _ATK) {
+int z_who_atk(int m_aggro, int c_aggro, int stm, int c_alive, int stage, int* _stm_, int* _ATK, int* _c_alive_) {
+	*_c_alive_ = c_alive;
 	if (m_aggro >= c_aggro) {
 		*_stm_ = --stm;
 		*_ATK = 1;
 		return ATK_DONGSEOK;
 	}
 	else {
+		if (3 <= stage) {
+			*_c_alive_ = --c_alive;
+		}
 		return ATK_CITIZEN;
 	}
 }
 
-int z_who_atk2(int c_pos, int z_pos, int m_pos, int stm, int* _stm_, int* _ATK) {
+int z_who_atk2(int c_pos, int z_pos, int m_pos, int stm, int c_alive, int stage, int* _stm_, int* _c_alive_) {
+	*_c_alive_ = c_alive;
 	if (m_pos == (z_pos + 1)) {
 		*_stm_ = --stm;
-		*_ATK = 0;
 		return ATK_DONGSEOK;
 	}
 	else if (c_pos == (z_pos - 1)) {
+		if (3 <= stage) {
+			*_c_alive_ = --c_alive;
+		}
 		return ATK_CITIZEN;
 	}
 }
@@ -547,15 +596,13 @@ int m_actionmsg(int m_action_f, int m_pos, int m_baggro, int m_aggro, int bstm, 
 	}
 }
 
-void czm_repos(int stage, int train_length, int *c_pos, int *z_pos, int *m_pos) {
-	if (stage == 2) {
-		*c_pos = train_length - 5; // 시민 초기 위치
-		*z_pos = train_length - 2; // 좀비 초기 위치
-		*m_pos = train_length - 1; // 마동석 초기 위치
-	}
-	else if (stage == 3) {
-		*c_pos = train_length - 5; // 시민 초기 위치
-		*z_pos = train_length - 2; // 좀비 초기 위치
-		*m_pos = train_length - 1; // 마동석 초기 위치
+void czm_repos(int stage, int train_length, int c_pos, int z_pos, int m_pos, int *_c_pos, int *_z_pos, int *_m_pos) {
+	*_c_pos = c_pos; // 시민 위치 반환
+	*_z_pos = z_pos; // 좀비 위치 반환
+	*_m_pos = m_pos; // 마동석 위치 반환
+	if (2 <= stage && stage >= 4) {
+		*_c_pos = train_length - 5; // 시민 초기 위치
+		*_z_pos = train_length - 2; // 좀비 초기 위치
+		*_m_pos = train_length - 1; // 마동석 초기 위치
 	}
 }
