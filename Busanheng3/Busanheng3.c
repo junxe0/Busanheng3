@@ -449,7 +449,7 @@ int c_action(int c_pos, int stage) { // 시민 행동 출력
 }
 
 int z_action(int z_pos, int c_pos, int m_pos, int m_aggro, int c_aggro, int stm, int c_alive, int stage, int* _stm, int* ATK, int* _c_alive) { // 좀비 행동 출력
-	*_stm = stm; // 체력 변경이 없다면 체력 다시 반환
+	*_stm = stm;
 	int result, _stm_ = 0, _ATK = 0, _c_alive_ = 0;
 	if ((c_pos == (z_pos - 1)) && (m_pos == (z_pos + 1))) {
 		result = z_who_atk(m_aggro, c_aggro, stm, c_alive, stage, &_stm_, &_ATK, &_c_alive_);
@@ -553,6 +553,7 @@ int m_action_inpput(int m_pos, int z_pos) { // 마동석 행동 선택
 
 int m_actionf(int count, int zombie, int m_action, int m_aggro, int p, int stm, int* _zombie_, int* _m_aggro_, int* _stm_) { // 마동석 행동
 	int result = 0, _zom_bie_;
+	*_zombie_ = zombie;
 	if (m_action == ACTION_REST) {
 		m_aggro--; /* 어그로 */
 		stm++; /* 체력 */
@@ -570,7 +571,6 @@ int m_actionf(int count, int zombie, int m_action, int m_aggro, int p, int stm, 
 	}
 	*_m_aggro_ = m_aggro; /* 어그로 */
 	*_stm_ = stm; /* 체력 */
-	*_zombie_ = zombie;
 	return result;
 }
 
@@ -582,9 +582,7 @@ int m_pull(int count, int zombie, int p, int* _zom_bie_) {
 	}
 	else if (m_per > p) { // 붙들기 성공
 		*_zom_bie_ = ++zombie; /* 붙들기 반환 */
-		if ((zombie - count) >= 2) { // 2 이상 차이가 날 경우
-			*_zom_bie_ = count + 1; /* 붙들기 반환 */
-		}
+		if ((zombie - count) >= 2) { *_zom_bie_ = count + 1; } // 2 이상 차이 날 경우
 		return 3; // 결과 출력
 	}
 }
