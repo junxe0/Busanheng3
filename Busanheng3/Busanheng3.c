@@ -44,18 +44,19 @@ int c_move(int, int, int, int, int, int, int, int*, int*, int*, int*);
 int v_move(int, int, int, int*, int*);
 int c_aggroMinMax(int);
 int v_aggroMinMax(int);
-int z_move(int, int, int, int, int, int, int, int*, int*);
-int z_movewhere(int, int, int, int, int, int*);
-void moveresult(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
+int z2bposition(int, int, int, int);
+int z_move(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int*, int*, int*, int*, int*);
+int z_movewhere(int, int, int, int, int, int, int, int, int, int, int, int*, int*, int*, int*);
+void moveresult(int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int, int);
 void c_moveresult(int, int, int, int, int, int, int, int, int, int, int);
 void v_moveresult(int, int, int, int, int);
-void z_moveresult(int, int, int);
+void z_moveresult(int, int, int, int, int, int, int, int);
 int m_moveAll(int, int, int, int*, int*);
 int m_move_inpput(int, int);
 int m_movef(int, int, int, int*, int*);
 int m_aggroMinMax(int);
 void m_moveresult(int, int, int, int, int);
-int c_action(int, int);
+int c_action(int, int, int, int, int);
 int v_action(int, int, int, int*, int*);
 int z_action(int, int, int, int, int, int, int, int, int, int, int, int, int, int*, int*, int*, int*);
 int z_who_atk(int, int, int, int, int, int, int, int*, int*, int*, int*);
@@ -220,11 +221,10 @@ void train_box5(int train_length, int c_alive, int c0_pos, int c1_pos, int c2_po
 	for (int i = 1; i <= 3; i++) {
 		for (int i2 = 1; i2 <= train_length; i2++) {
 			if ((i == 1) || (i == 3) || ((i == 2) & ((i2 == train_length)) || (i2 == 1))) { printf("#"); }
-			else if ((i == 2) & (i2 == c0_pos) & (c_alive == 1)) { printf("C"); }
+			else if ((i == 2) & (i2 == c0_pos) & (c_alive >= 1)) { printf("C"); }
 			else if ((i == 2) & (i2 == c1_pos) & (c_alive == 1)) { printf("M"); }
-			else if ((i == 2) & (i2 == c1_pos) & (c_alive == 2)) { printf("C"); }
-			else if ((i == 2) & (i2 == c2_pos) & (c_alive == 1)) { printf("M"); }
-			else if ((i == 2) & (i2 == c2_pos) & (c_alive == 2)) { printf("M"); }
+			else if ((i == 2) & (i2 == c1_pos) & (c_alive >= 2)) { printf("C"); }
+			else if ((i == 2) & (i2 == c2_pos) & (c_alive <= 2)) { printf("M"); }
 			else if ((i == 2) & (i2 == c2_pos) & (c_alive == 3)) { printf("C"); }
 			else if ((i == 2) & (i2 == z_pos)) { printf("Z"); }
 			else if ((i == 2) & (i2 == m_pos)) { printf("M"); }
@@ -236,29 +236,30 @@ void train_box5(int train_length, int c_alive, int c0_pos, int c1_pos, int c2_po
 }
 
 void repeat(int train_length, int stm, int p, int count, int zombie, int stage, int c_alive, int v_alive, int c0_pos, int c1_pos, int c2_pos, int v_pos, int z_pos, int m_pos, int c_aggro, int v_aggro, int m_aggro) {
-	int bstm, b_stage, c_baggro, v_baggro, m_baggro, c0_bpos, c1_bpos, c2_bpos, v_bpos, z_bpos, m_bpos, c_result, v_result, z_result;
-	int _c_alive, m_move, m_action_f, z_action_r, ATK, _zombie, _c0_pos, _c1_pos, _c2_pos, _v_pos, _z_pos, _m_pos, _stm, _v_aggro, _m_aggro, _m_move;
+	int bstm, b_stage, c_baggro, v_baggro, m_baggro, c0_bpos, c1_bpos, c2_bpos, v_bpos, z_bpos, z2_bpos, m_bpos, c_result, z_result;
+	int _c_alive, _v_alive, m_move, m_action_f, z_action_r, ATK, _zombie, _c0_pos, _c1_pos, _c2_pos, _v_pos, _z_pos, _m_pos, _stm, _v_aggro, _m_aggro, _m_move;
 	while (1) {
 		++count, ++zombie;
 		c_baggro = c_aggro, v_baggro = v_aggro, c0_bpos = c0_pos, c1_bpos = c1_pos, c2_bpos = c2_pos, v_bpos = v_pos;
 		c_aggro = c_moveAll(p, stage, c_alive, v_alive, c_aggro, v_aggro, c0_pos, c1_pos, c2_pos, v_pos, &_c0_pos, &_c1_pos, &_c2_pos, &_v_aggro, &_v_pos, &c_result);
 		c0_pos = _c0_pos, c1_pos = _c1_pos, c2_pos = _c2_pos, v_pos = _v_pos, z_bpos = z_pos, v_aggro = _v_aggro;
-		z_result = z_move(count, zombie, m_aggro, c_aggro, c2_pos, z_pos, m_pos, &_zombie, &_z_pos);
-		zombie = _zombie, z_pos = _z_pos, m_bpos = m_pos, m_baggro = m_aggro;
+		z2_bpos = z2bposition(stage, c_alive, c1_pos, c2_pos);
+		z_result = z_move(count, zombie, stage, c_alive, v_alive, m_aggro, c_aggro, v_aggro, c0_pos, c1_pos, c2_pos, v_pos, z_pos, m_pos, &_zombie, &_z_pos, &_c0_pos, &_c1_pos, &_c2_pos);
+		zombie = _zombie, z_pos = _z_pos, c0_pos = _c0_pos, c1_pos = _c1_pos, c2_pos = _c2_pos, m_bpos = m_pos, m_baggro = m_aggro;
 		train_box(count, train_length, stage, c_alive, v_alive, c0_pos, c1_pos, c2_pos, v_pos, z_pos, m_pos);
-		moveresult(stage, c_alive, v_alive, c_result, c0_bpos, c0_pos, c1_bpos, c1_pos, c2_bpos, c2_pos, v_bpos, v_pos, c_baggro, c_aggro, v_baggro, v_aggro, z_result, z_bpos, z_pos);
+		moveresult(stage, c_alive, v_alive, c_result, c0_bpos, c0_pos, c1_bpos, c1_pos, c2_bpos, c2_pos, v_bpos, v_pos, c_baggro, c_aggro, v_baggro, v_aggro, z_result, z_bpos, z2_bpos, z_pos);
 		m_aggro = m_moveAll(m_pos, z_pos, m_aggro, &_m_move, &_m_pos);
 		m_move = _m_move, m_pos = _m_pos;
 		train_box(count, train_length, stage, c_alive, v_alive, c0_pos, c1_pos, c2_pos, v_pos, z_pos, m_pos);
 		m_moveresult(m_move, m_bpos, m_pos, m_baggro, m_aggro);
 		b_stage = stage, bstm = stm;
-		stage = c_action(c2_pos, stage), v_action(stage, c2_pos, v_pos, &_c2_pos, &_v_pos);
+		stage = c_action(c0_pos, c1_pos, c2_pos, stage, c_alive), v_action(stage, c2_pos, v_pos, &_c2_pos, &_v_pos);
 		c2_pos = _c2_pos, v_pos = _v_pos; 
 		if (b_stage != stage) { break; }
 		m_action_f = m_actionAll(m_pos, z_pos, count, zombie, m_aggro, p, stm, &_zombie, &_m_aggro, &_stm);
 		m_baggro = m_aggro, bstm = stm, m_aggro = _m_aggro, stm = _stm, zombie = _zombie;
 		m_actionmsg(m_action_f, m_pos, m_baggro, m_aggro, bstm, stm);
-		z_action_r = z_action(z_pos, c0_pos, c1_pos, c2_pos, v_pos, m_pos, c_aggro, v_aggro, m_aggro, stm, c_alive, stage, &_stm, &ATK, &_c_alive);
+		z_action_r = z_action(z_pos, c0_pos, c1_pos, c2_pos, v_pos, m_pos, v_aggro, c_aggro, m_aggro, stm, c_alive, v_alive, stage, &_stm, &ATK, &_c_alive, &_v_alive);
 		stm = _stm, c_alive = _c_alive;
 		ATK_f(stage, c_alive, z_action_r, m_aggro, c_aggro, bstm, stm, ATK);
 	}
@@ -352,55 +353,140 @@ int v_aggroMinMax(int _v_aggro_) { // 시민 어그로 최솟값 최댓값 판단
 	}
 }
 
-int z_move(int count, int zombie, int m_aggro, int c_aggro, int c2_pos, int z_pos, int m_pos, int* _zombie, int* _z_pos) { // 좀비 이동
-	int _z_pos_, result;
+int z2bposition(int stage, int c_alive, int c1_pos, int c2_pos) {
+	if (stage == 4) {
+		if (c_alive == 2) {
+			return c2_pos;
+		}
+		else if (c_alive == 1) {
+			return c1_pos;
+		}
+	}
+}
+
+int z_move(int count, int zombie, int stage, int c_alive, int v_alive, int m_aggro, int c_aggro, int v_aggro, int c0_pos, int c1_pos, int c2_pos, int v_pos, int z_pos, int m_pos, int* _zombie, int* _z_pos, int* _c0_pos, int* _c1_pos, int* _c2_pos) {
+	int _c0_pos_, _c1_pos_, _c2_pos_, _z_pos_, _z2_bpos, result;
 	*_zombie = zombie;
+	*_c0_pos = c0_pos;
+	*_c1_pos = c1_pos;
+	*_c2_pos = c2_pos;
+	*_z_pos = z_pos;
 	if (count % 2 != 0) {
 		if (count < zombie) {
 			*_zombie = --zombie;
-			*_z_pos = z_pos; // 위치
-			result = 2; // 결과 출력
+			*_z_pos = z_pos;
+			result = 2;
 		}
 		else {
-			result = z_movewhere(m_aggro, c_aggro, c2_pos, z_pos, m_pos, &_z_pos_); // 좀비 이동 방향
-			*_z_pos = _z_pos_; // 좀비 현재 위치 반환
+			result = z_movewhere(stage, c_alive, m_aggro, c_aggro, v_aggro, c0_pos, c1_pos, c2_pos, v_pos, z_pos, m_pos, &_c0_pos_, &_c1_pos_, &_c2_pos_, &_z_pos_, &_z2_bpos);
+			*_z_pos = _z_pos_;
 		}
 	}
 	else {
-		*_z_pos = z_pos; // 좀비 위치 반환
-		result = 1; // 결과 출력
+		if ((stage == 4) && (c_alive == 2)) {
+			result = z_movewhere(stage, c_alive, m_aggro, c_aggro, v_aggro, c0_pos, c1_pos, c2_pos, v_pos, z_pos, m_pos, &_c0_pos_, &_c1_pos_, &_c2_pos_, &_z_pos_);
+			*_c0_pos = _c0_pos_;
+			*_c1_pos = _c1_pos_;
+			*_c2_pos = _c2_pos_;
+			*_z_pos = _z_pos_;
+		}
+		else if ((stage == 4) && (c_alive == 1)) {
+			result = z_movewhere(stage, c_alive, m_aggro, c_aggro, v_aggro, c0_pos, c1_pos, c2_pos, v_pos, z_pos, m_pos, &_c0_pos_, &_c1_pos_, &_c2_pos_, &_z_pos_);
+			*_c0_pos = _c0_pos_;
+			*_c1_pos = _c1_pos_;
+			*_c2_pos = _c2_pos_;
+			*_z_pos = _z_pos_;
+		}
+		else {
+			*_z_pos = z_pos;
+			result = 1;
+		}
 	}
 	return result;
 }
 
-int z_movewhere(int m_aggro, int c_aggro, int c2_pos, int z_pos, int m_pos, int* _z_pos_) { // 좀비 이동 방향
+int z_movewhere(int stage, int c_alive, int m_aggro, int c_aggro, int v_aggro, int c0_pos, int c1_pos, int c2_pos, int v_pos, int z_pos, int m_pos, int* _c0_pos_, int* _c1_pos_, int* _c2_pos_, int* _z_pos_) { // 좀비 이동 방향
 	*_z_pos_ = z_pos;
-	if (m_aggro <= c_aggro) {
-		if (c2_pos == z_pos - 1) {
-			return 3;
+	*_c0_pos_ = c0_pos;
+	*_c1_pos_ = c1_pos;
+	*_c2_pos_ = c2_pos;
+	int c_pos, z2_pos;
+	if (stage == 2) {
+		if (c2_pos > v_pos && m_aggro <= c_aggro) {
+			if (c2_pos == z_pos - 1) {
+				*_z_pos_ = z_pos;
+				return 3;
+			}
+			else {
+				*_z_pos_ = z_pos - 1;
+				return 0;
+			}
+		}
+		else if (c2_pos < v_pos && m_aggro <= v_aggro) {
+			if (v_pos == z_pos - 1) { return 3; }
+			else {
+				*_z_pos_ = z_pos - 1;
+				return 0;
+			}
 		}
 		else {
-			*_z_pos_ = z_pos - 1;
-			return 0;
+			if (m_pos == z_pos + 1) { return 3; }
+			else {
+				*_z_pos_ = z_pos + 1;
+				return 0;
+			}
+		}
+	}
+	else if (stage == 4) {
+		if ((c_alive == 3)) { c_pos = c2_pos; z2_pos = z_pos; }
+		else if ((c_alive == 2)) { c_pos = c1_pos; z2_pos = c2_pos; }
+		else if ((c_alive == 1)) { c_pos = c0_pos; z2_pos = c1_pos; }
+		else { c_pos = c2_pos; z2_pos = z_pos; }
+		if (m_aggro <= c_aggro) {
+			if (c_pos == (z2_pos - 1)) { return 4; }
+			else if (z_pos == (z2_pos + 1)) { return 3; }
+			else if ((c_pos == (z2_pos - 1)) && (z_pos == (z2_pos + 1))) { return 5; }
+			else {
+				if ((c_alive == 3)) { *_z_pos_ = z_pos - 1; }
+				else if ((c_alive == 2)) { *_c2_pos_ = c2_pos - 1; }
+				else if ((c_alive == 1)) { *_c1_pos_ = c1_pos - 1; }
+				return 0;
+			}
+		}
+		else {
+			if (m_pos == (z_pos + 1)) { return 3; }
+			else if (z_pos == (z2_pos + 1)) { return 4; }
+			else if ((m_pos == (z_pos + 1)) && (z_pos == (z2_pos + 1))) { return 5; }
+			else {
+				if ((c_alive == 3)) { *_z_pos_ = z_pos - 1; }
+				else if ((c_alive == 2)) { *_c2_pos_ = c2_pos - 1; }
+				else if ((c_alive == 1)) { *_c1_pos_ = c1_pos - 1; }
+				return 0;
+			}
 		}
 	}
 	else {
-		if (m_pos == z_pos + 1) {
-			return 3;
+		if (m_aggro <= c_aggro) {
+			if (c2_pos == (z_pos - 1)) { return 3; }
+			else {
+				*_z_pos_ = z_pos - 1;
+				return 0;
+			}
 		}
 		else {
-			*_z_pos_ = z_pos + 1;
-			return 0;
+			if (m_pos == (z_pos + 1)) { return 3; }
+			else {
+				*_z_pos_ = z_pos + 1;
+				return 0;
+			}
 		}
 	}
 }
 
-void moveresult(int stage, int c_alive, int v_alive, int c_result, int c0_bpos, int c0_pos, int c1_bpos, int c1_pos, int c2_bpos, int c2_pos, int v_bpos, int v_pos, int c_baggro, int c_aggro, int v_baggro, int v_aggro, int z_result, int z_bpos, int z_pos) {
+void moveresult(int stage, int c_alive, int v_alive, int c_result, int c0_bpos, int c0_pos, int c1_bpos, int c1_pos, int c2_bpos, int c2_pos, int v_bpos, int v_pos, int c_baggro, int c_aggro, int v_baggro, int v_aggro, int z_result, int z_bpos, int z2_bpos, int z_pos) {
 	c_moveresult(stage, c_alive, c_result, c0_bpos, c0_pos, c1_bpos, c1_pos, c2_bpos, c2_pos, c_baggro, c_aggro); // 시민 이동 결과
-	if (stage == 2 && v_alive > 0) {
-		v_moveresult(c_result, v_bpos, v_pos, v_baggro, v_aggro); // 빌런 이동 결과
-	}
-	z_moveresult(z_result, z_bpos, z_pos); // 좀비 이동 결과
+	if (stage == 2 && v_alive > 0) { v_moveresult(c_result, v_bpos, v_pos, v_baggro, v_aggro); } // 빌런 이동 결과
+	z_moveresult(stage, c_alive, z_result, z_bpos, z2_bpos, z_pos, c1_pos, c2_pos); // 좀비 이동 결과
 }
 
 void c_moveresult(int stage, int c_alive, int c_result, int c0_bpos, int c0_pos, int c1_bpos, int c1_pos, int c2_bpos, int c2_pos, int c_baggro, int c_aggro) { // 시민 이동 결과 출력
@@ -423,26 +509,59 @@ void c_moveresult(int stage, int c_alive, int c_result, int c0_bpos, int c0_pos,
 }
 
 void v_moveresult(int c_result, int v_bpos, int v_pos, int v_baggro, int v_aggro) {
-	if (c_result == 0) {
-		printf("빌런 : 제자리 %d ( 어그로 : %d -> %d )\n", v_pos - 1, v_baggro, v_aggro);
-	}
-	else if (c_result == 1) {
-		printf("빌런 : %d -> %d ( 어그로 : %d -> %d )\n", v_bpos - 1, v_pos - 1, v_baggro, v_aggro);
-	}
+	if (c_result == 0) { printf("빌런 : 제자리 %d ( 어그로 : %d -> %d )\n", v_pos - 1, v_baggro, v_aggro); }
+	else if (c_result == 1) { printf("빌런 : %d -> %d ( 어그로 : %d -> %d )\n", v_bpos - 1, v_pos - 1, v_baggro, v_aggro); }
 }
 
-void z_moveresult(int z_result, int z_bpos, int z_pos) { // 좀비 이동 결과 출력
+void z_moveresult(int stage, int c_alive, int z_result, int z_bpos, int z2_bpos, int z_pos, int c1_pos, int c2_pos) { // 좀비 이동 결과 출력
+	int z2_pos = 0;
 	if (z_result == 0) {
 		printf("좀비 : %d -> %d\n\n", z_bpos - 1, z_pos - 1);
+		if ((stage == 4) && (c_alive < 3)) {
+			if ((c_alive == 2)) { z2_pos = c2_pos; }
+			else if ((c_alive == 1)) { z2_pos = c2_pos; }
+			printf("강화 좀비 : %d -> %d\n\n", z2_bpos - 1, z2_pos - 1);
+		}
 	}
 	else if (z_result == 1) {
 		printf("좀비 : 제자리 %d ( 움직일 수 없습니다. )\n\n", z_pos - 1);
+		if ((stage == 4) && (c_alive < 3)) {
+			if ((c_alive == 2)) { z2_pos = c2_pos; }
+			else if ((c_alive == 1)) { z2_pos = c2_pos; }
+			printf("강화 좀비 : %d -> %d\n\n", z2_bpos - 1, z2_pos - 1);
+		}
 	}
 	else if (z_result == 2) {
 		printf("좀비 : 제자리 %d ( 붙들기 )\n\n", z_pos - 1);
+		if ((stage == 4) && (c_alive < 3)) {
+			if ((c_alive == 2)) { z2_pos = c2_pos; }
+			else if ((c_alive == 1)) { z2_pos = c2_pos; }
+			printf("강화 좀비 : %d -> %d\n\n", z2_bpos - 1, z2_pos - 1);
+		}
 	}
 	else if (z_result == 3) {
 		printf("좀비 : 제자리 %d\n\n", z_pos - 1);
+		if ((stage == 4) && (c_alive < 3)) {
+			if ((c_alive == 2)) { z2_pos = c2_pos; }
+			else if ((c_alive == 1)) { z2_pos = c2_pos; }
+			printf("강화 좀비 : %d -> %d\n\n", z2_bpos - 1, z2_pos - 1);
+		}
+	}
+	else if (z_result == 4) {
+		printf("좀비 : %d -> %d\n\n", z_bpos - 1, z_pos - 1);
+		if ((stage == 4) && (c_alive < 3)) {
+			if ((c_alive == 2)) { z2_pos = c2_pos; }
+			else if ((c_alive == 1)) { z2_pos = c2_pos; }
+			printf("강화 좀비 : 제자리 %d\n\n", z2_pos - 1);
+		}
+	}
+	else if (z_result == 5) {
+		printf("좀비 : 제자리 %d\n\n", z_pos - 1);
+		if ((stage == 4) && (c_alive < 3)) {
+			if ((c_alive == 2)) { z2_pos = c2_pos; }
+			else if ((c_alive == 1)) { z2_pos = c2_pos; }
+			printf("강화 좀비 : 제자리 %d\n\n", z2_pos - 1);
+		}
 	}
 }
 
@@ -489,28 +608,23 @@ int m_movef(int m_move, int m_aggro, int m_pos, int* _m_aggro, int* _m_pos_) {
 }
 
 int m_aggroMinMax(int _m_aggro) { // 마동석 어그로 최솟값 최댓값 판단
-	if (_m_aggro >= AGGRO_MAX) { // 최댓값
-		return AGGRO_MAX;
-	}
-	else if (_m_aggro <= AGGRO_MIN) { // 최솟값
-		return AGGRO_MIN;
-	}
-	else {
-		return _m_aggro; // 원래 값
-	}
+	if (_m_aggro >= AGGRO_MAX) { return AGGRO_MAX; }
+	else if (_m_aggro <= AGGRO_MIN) { return AGGRO_MIN; }
+	else { return _m_aggro; }
 }
 
 void m_moveresult(int m_result, int m_bpos, int m_pos, int m_baggro, int m_aggro) { // 마동석 이동 출력
-	if (m_result == MOVE_STAY) {
-		printf("마동석 : 제자리 %d ( 어그로 : %d -> %d )\n\n", m_pos - 1, m_baggro, m_aggro);
-	}
-	else if (m_result == MOVE_LEFT) {
-		printf("마동석 : %d -> %d ( 어그로 : %d -> %d )\n\n", m_bpos - 1, m_pos - 1, m_baggro, m_aggro);
-	}
+	if (m_result == MOVE_STAY) { printf("마동석 : 제자리 %d ( 어그로 : %d -> %d )\n\n", m_pos - 1, m_baggro, m_aggro); }
+	else if (m_result == MOVE_LEFT) { printf("마동석 : %d -> %d ( 어그로 : %d -> %d )\n\n", m_bpos - 1, m_pos - 1, m_baggro, m_aggro); }
 }
 
-int c_action(int c2_pos, int stage) { // 시민 행동 출력
-	if (c2_pos == 2) {
+int c_action(int c0_pos, int c1_pos, int c2_pos, int stage, int c_alive) { // 시민 행동 출력
+	int c_pos;
+	if (3 <= stage && c_alive == 3) { c_pos = c2_pos; }
+	else if (3 <= stage && c_alive == 2) { c_pos = c1_pos; }
+	else if (3 <= stage && c_alive == 1) { c_pos = c0_pos; }
+	else { c_pos = c2_pos; }
+	if (c_pos <= 2) {
 		if (stage < 4) {
 			printf("탈출 성공!!!\n시민이 다음 스테이지로 진출합니다.\n\n");
 			stage++;
@@ -520,9 +634,7 @@ int c_action(int c2_pos, int stage) { // 시민 행동 출력
 			exit(0);
 		}
 	}
-	else {
-		printf("시민은 아무것도 하지 않았습니다.\n");
-	}
+	else { printf("시민은 아무것도 하지 않았습니다.\n"); }
 	return stage;
 }
 
@@ -536,13 +648,11 @@ int v_action(int stage, int c2_pos, int v_pos, int* _c2_pos, int* _v_pos) {
 		if (v_per <= 30) {
 			*_v_pos = c2_pos;
 			*_c2_pos = v_pos;
-			printf("빌런의 발암 시도 성공...\n");
+			printf("빌런의 발암 시도 성공\n");
 			printf("시민 : %d -> %d\n", c2_bpos, v_pos);
 			printf("빌런 : %d -> %d\n", v_bpos, c2_pos);
 		}
-		else {
-			printf("빌런의 발암 시도가 실패하였습니다.\n");
-		}
+		else { printf("빌런의 발암 시도가 실패하였습니다.\n"); }
 	}
 }
 
@@ -550,25 +660,27 @@ int z_action(int z_pos, int c0_pos, int c1_pos, int c2_pos, int v_pos, int m_pos
 	*_stm = stm;
 	*_c_alive = c_alive;
 	*_v_alive = v_alive;
-	int result, _stm_, _ATK, _c_alive_, _v_alive_, c_pos;
-	if ((stage == 2) && ((c0_pos < v_pos) || (c1_pos < v_pos) || (c2_pos < v_pos))) { c_pos = v_pos; }
-	else if ((2 < stage) && (c_alive == 3) && (c2_pos > v_pos)) { c_pos = c2_pos; }
-	else if ((2 < stage) && (c_alive == 2) && (c1_pos > v_pos)) { c_pos = c1_pos; }
-	else if ((2 < stage) && (c_alive == 1) && (c0_pos > v_pos)) { c_pos = c0_pos; }
-	else { c_pos = c2_pos; }
-	if ((c_pos == (z_pos - 1)) && (m_pos == (z_pos + 1))) {
+	int result, _stm_, _ATK, _c_alive_, _v_alive_, c_pos, z2_pos;
+	if ((stage == 2) && (c2_pos < v_pos)) { c_pos = v_pos; }
+	else if ((2 < stage) && (c_alive == 3)) { c_pos = c2_pos; z2_pos = z_pos; }
+	else if ((2 < stage) && (c_alive == 2)) { c_pos = c1_pos; z2_pos = z_pos; }
+	else if ((2 < stage) && (c_alive == 1)) { c_pos = c0_pos; z2_pos = z_pos; }
+	else { c_pos = c2_pos; z2_pos = z_pos; }
+	if ((stage == 4) && (c_alive == 3)) { z2_pos = z_pos; }
+	else if ((stage == 4) && (c_alive == 2)) { z2_pos = c2_pos; }
+	else if ((stage == 4) && (c_alive == 1)) { z2_pos = c1_pos; }
+	else { z2_pos = z_pos; }
+	if ((c_pos == (z2_pos - 1)) && (m_pos == (z_pos + 1))) {
 		result = z_who_atk(c_aggro, v_aggro, m_aggro, stm, c_alive, c_alive, stage, &_stm_, &_ATK, &_c_alive_, &_v_alive_);
 		*_stm = _stm_, *ATK = _ATK, * _c_alive = _c_alive_, * _v_alive = _v_alive_;
 		return result;
 	}
-	else if ((c_pos == (z_pos - 1)) || (m_pos == (z_pos + 1))) {
+	else if ((c_pos == (z2_pos - 1)) || (m_pos == (z_pos + 1))) {
 		result = z_who_atk2(c0_pos, c1_pos, c2_pos, v_pos, z_pos, m_pos, stm, c_alive, v_alive, stage, &_stm_, &_c_alive_, &_v_alive_);
 		*_stm = _stm_, *ATK = 0, *_c_alive = _c_alive_, *_v_alive = _v_alive_;
 		return result;
 	}
-	else {
-		return ATK_NONE;
-	}
+	else { return ATK_NONE; }
 }
 
 int z_who_atk(int c_aggro, int v_aggro, int m_aggro, int stm, int c_alive, int v_alive, int stage, int* _stm_, int* _ATK, int* _c_alive_, int* _v_alive_) {
@@ -585,9 +697,7 @@ int z_who_atk(int c_aggro, int v_aggro, int m_aggro, int stm, int c_alive, int v
 		return ATK_VILLAIN;
 	}
 	else {
-		if (3 <= stage) {
-			*_c_alive_ = --c_alive;
-		}
+		if (3 <= stage) { *_c_alive_ = --c_alive; }
 		return ATK_CITIZEN;
 	}
 }
@@ -597,55 +707,46 @@ int z_who_atk2(int c0_pos, int c1_pos, int c2_pos, int v_pos, int z_pos, int m_p
 	*_c_alive_ = c_alive;
 	*_stm_ = stm;
 	int c_pos = 0;
-	if ((c_alive == 3) && (c2_pos > v_pos)) { c_pos = c2_pos; }
-	else if ((c_alive == 2) && (c1_pos > v_pos)) { c_pos = c1_pos; }
-	else if ((c_alive == 1) && (c0_pos > v_pos)) { c_pos = c0_pos; }
+	if (c_alive == 3) { c_pos = c2_pos; }
+	else if (c_alive == 2) { c_pos = c1_pos; }
+	else if (c_alive == 1) { c_pos = c0_pos; }
 	if (m_pos == (z_pos + 1)) {
 		*_stm_ = --stm;
 		return ATK_DONGSEOK;
 	}
-	else if (c_pos > v_pos) {
-		if (c_pos == (z_pos - 1)) {
-			if (3 <= stage) {
-				*_c_alive_ = --c_alive;
-			}
-			return ATK_CITIZEN;
-		}
-	}
-	else if (stage == 2 && c_pos < v_pos) {
+	else if ((stage == 2) && (c_pos < v_pos)) {
 		*_v_alive_ = --v_alive;
 		return ATK_VILLAIN;
 	}
+	else if ((3 <= stage) && (c_pos == (z_pos - 1))) {
+		if (3 <= stage) {
+			*_c_alive_ = --c_alive;
+		}
+		return ATK_CITIZEN;
+	}
+	else { return ATK_CITIZEN; }
 }
 
 void ATK_f(int stage, int c_alive, int z_action_r, int m_aggro, int c_aggro, int bstm, int stm, int ATK) { // 마동석 사망 확인
 	if (z_action_r == ATK_DONGSEOK) {
-		if (ATK == 1) {
-			printf("좀비가 마동석을 공격하였습니다. ( %d(C) vs. %d(M), 마동석 체력 : %d -> %d )\n", c_aggro, m_aggro, bstm, stm);
-		}
-		else {
-			printf("좀비가 마동석을 공격하였습니다. ( 마동석 체력 : %d -> %d )\n", bstm, stm);
-		}
+		if (ATK == 1) { printf("좀비가 마동석을 공격하였습니다. ( %d(C) vs. %d(M), 마동석 체력 : %d -> %d )\n", c_aggro, m_aggro, bstm, stm); }
+		else { printf("좀비가 마동석을 공격하였습니다. ( 마동석 체력 : %d -> %d )\n", bstm, stm); }
 		if (stm <= 0) {
-			printf("GAME OVER...\n마동석이 사망하였습니다...");
+			printf("GAME OVER...\n마동석이 사망하였습니다...\n");
 			exit(0);
 		}
 	}
-	else if (z_action_r == ATK_VILLAIN) {
-		printf("빌런이 사망하였으나 게임은 계속 진행됩니다.\n");
-	}
+	else if (z_action_r == ATK_VILLAIN) { printf("빌런이 사망하였으나 게임은 계속 진행됩니다.\n"); }
 	else if (z_action_r == ATK_CITIZEN) {
 		if (2 < stage && 0 < c_alive) {
-			printf("시민이 %d명 남았습니다.", c_alive);
+			printf("시민이 공격당하였습니다. 시민이 %d명 남았습니다.\n", c_alive);
 		}
 		else {
 			printf("GAME OVER...\n시민을 지키는데 실패하였습니다...\n");
 			exit(0);
 		}
 	}
-	else if (z_action_r == ATK_NONE) {
-		printf("좀비는 아무도 공격하지 못했습니다.\n");
-	}
+	else if (z_action_r == ATK_NONE) { printf("좀비는 아무도 공격하지 못했습니다.\n"); }
 }
 
 int m_actionAll(int m_pos, int z_pos, int count, int zombie, int m_aggro, int p, int stm, int* _zombie, int* _m_aggro, int* _stm) {
@@ -719,15 +820,9 @@ int m_pull(int count, int zombie, int p, int* _zom_bie_) {
 }
 
 int m_stmMinMax(int _stm) { // 마동석 체력 최솟값 최댓값 판단
-	if (_stm >= STM_MAX) {
-		return STM_MAX; // 최댓값
-	}
-	else if (_stm <= STM_MIN) {
-		return STM_MIN; // 최솟값
-	}
-	else {
-		return _stm; // 원래 값
-	}
+	if (_stm >= STM_MAX) { return STM_MAX; }
+	else if (_stm <= STM_MIN) { return STM_MIN;	}
+	else { return _stm; }
 }
 
 int m_actionmsg(int m_action_f, int m_pos, int m_baggro, int m_aggro, int bstm, int stm) { // 마동석 행동 출력
@@ -750,22 +845,20 @@ int m_actionmsg(int m_action_f, int m_pos, int m_baggro, int m_aggro, int bstm, 
 }
 
 void reposition(int stage, int train_length, int c0_pos, int c1_pos, int c2_pos, int v_pos, int z_pos, int m_pos, int* _c0_pos, int* _c1_pos, int *_c2_pos, int* _v_pos, int *_z_pos, int *_m_pos) {
-	*_c0_pos = c0_pos; // 시민 3 위치 반환
-	*_c1_pos = c1_pos; // 시민 2 위치 반환
-	*_c2_pos = c2_pos; // 시민 위치 반환
-	*_v_pos = v_pos; // 빌런 위치 반환
-	*_z_pos = z_pos; // 좀비 위치 반환
-	*_m_pos = m_pos; // 마동석 위치 반환
+	*_c0_pos = c0_pos;
+	*_c1_pos = c1_pos;
+	*_c2_pos = c2_pos;
+	*_v_pos = v_pos;
+	*_z_pos = z_pos;
+	*_m_pos = m_pos;
 	if ((2 <= stage) && (stage <= 4)) {
-		*_c2_pos = train_length - 5; // 시민 초기 위치
-		*_z_pos = train_length - 2; // 좀비 초기 위치
-		*_m_pos = train_length - 1; // 마동석 초기 위치
-		if (stage == 2) {
-			*_v_pos = train_length - 4; // 빌런 초기 위치
-		}
+		*_c2_pos = train_length - 5;
+		*_z_pos = train_length - 2;
+		*_m_pos = train_length - 1;
+		if (stage == 2) { *_v_pos = train_length - 4; }
 		else if (3 <= stage) {
-			*_c0_pos = train_length / 4; // 시민 3 초기 위치
-			*_c1_pos = train_length / 3; // 시민 2 초기 위치
+			*_c0_pos = train_length / 4;
+			*_c1_pos = train_length / 3;
 		}
 	}
 }
