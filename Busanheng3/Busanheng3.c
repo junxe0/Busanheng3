@@ -90,7 +90,7 @@ int main(void) {
 	int v_pos = train_length - 4; // 빌런 초기 위치
 	int z_pos = train_length - 2; // 좀비 초기 위치
 	int m_pos = train_length - 1; // 마동석 초기 위치
-	int stage = 4; // 스테이지
+	int stage = 1; // 스테이지
 
 	for (int i = 0; i < 4; i++) {
 		int c_aggro = 1, v_aggro = 1, m_aggro = 1;
@@ -290,31 +290,29 @@ int c_move(int p, int stage, int c_alive, int c_aggro, int c0_pos, int c1_pos, i
 	*_c1_pos_ = c1_pos; // 위치
 	*_c2_pos_ = c2_pos; // 위치
 	if (c_per <= p) {
-		if (2 < stage) {
-			if (c_alive == 3) { *_c2_pos_ = c2_pos; }
-			else if (c_alive == 2) { *_c1_pos_ = c1_pos; }
-			else if (c_alive == 1) { *_c0_pos_ = c0_pos; }
-		}
-		else { *_c2_pos_ = c2_pos; }
 		*_c_aggro = --c_aggro; // 어그로
-		return 0; // 결과 출력
+		if (2 < stage) {
+			if (c_alive == 3) { *_c2_pos_ = c2_pos; return 4; }
+			else if (c_alive == 2) { *_c1_pos_ = c1_pos; return 3; }
+			else if (c_alive == 1) { *_c0_pos_ = c0_pos; return 2; }
+		}
+		else { *_c2_pos_ = c2_pos; return 0; }
 	}
 	else if (c_per > p) {
+		*_c_aggro = ++c_aggro;
 		if (2 < stage) {
 			if (c_alive == 3) {
-				if ((c2_pos == (c1_pos + 1)) && (c1_pos == (c0_pos + 1))) { *_c0_pos_ = c0_pos - 1; }
-				else if ((c2_pos == (c1_pos + 1))) { *_c1_pos_ = c1_pos - 1; }
-				else { *_c2_pos_ = c2_pos - 1; }
+				if ((c2_pos == (c1_pos + 1)) && (c1_pos == (c0_pos + 1))) { *_c0_pos_ = c0_pos - 1; return 5; }
+				else if ((c2_pos == (c1_pos + 1))) { *_c1_pos_ = c1_pos - 1; return 6; }
+				else { *_c2_pos_ = c2_pos - 1; return 7; }
 			}
 			else if (c_alive == 2) {
-				if ((c1_pos == (c0_pos + 1))) { *_c0_pos_ = c0_pos - 1; }
-				else { *_c1_pos_ = c1_pos - 1; }
+				if ((c1_pos == (c0_pos + 1))) { *_c0_pos_ = c0_pos - 1; return 5; }
+				else { *_c1_pos_ = c1_pos - 1; return 6; }
 			}
-			else if (c_alive == 1) { *_c0_pos_ = c0_pos - 1; }
+			else if (c_alive == 1) { *_c0_pos_ = c0_pos - 1; return 5; }
 		}
-		else { *_c2_pos_ = c2_pos - 1; }
-		*_c_aggro = ++c_aggro;
-		return 1; // 결과 출력
+		else { *_c2_pos_ = c2_pos - 1; return 1; }
 	}
 }
 
@@ -499,16 +497,12 @@ void moveresult(int stage, int c_alive, int v_alive, int c_result, int c0_bpos, 
 
 void c_moveresult(int stage, int c_alive, int c_result, int c0_bpos, int c0_pos, int c1_bpos, int c1_pos, int c2_bpos, int c2_pos, int c_baggro, int c_aggro) { // 시민 이동 결과 출력
 	if (2 < stage) {
-		if (c_result == 0) {
-			if (c_alive == 1) { printf("시민 0 : 제자리 %d ( 어그로 : %d -> %d )\n", c0_pos - 1, c_baggro, c_aggro); }
-			else if (c_alive == 2) { printf("시민 1 : 제자리 %d ( 어그로 : %d -> %d )\n", c1_pos - 1, c_baggro, c_aggro); }
-			else if (c_alive == 3) { printf("시민 2 : 제자리 %d ( 어그로 : %d -> %d )\n", c2_pos - 1, c_baggro, c_aggro); }
-		}
-		else if (c_result == 1) {
-			if (c_alive == 1) { printf("시민 0 : %d -> %d ( 어그로 : %d -> %d )\n", c0_bpos - 1, c0_pos - 1, c_baggro, c_aggro); }
-			else if (c_alive == 2) { printf("시민 1 : %d -> %d ( 어그로 : %d -> %d )\n", c1_bpos - 1, c1_pos - 1, c_baggro, c_aggro); }
-			else if (c_alive == 3) { printf("시민 2 : %d -> %d ( 어그로 : %d -> %d )\n", c2_bpos - 1, c2_pos - 1, c_baggro, c_aggro); }
-		}
+		if (c_result == 2) { printf("시민 0 : 제자리 %d ( 어그로 : %d -> %d )\n", c0_pos - 1, c_baggro, c_aggro); }
+		else if (c_result == 3) { printf("시민 1 : 제자리 %d ( 어그로 : %d -> %d )\n", c1_pos - 1, c_baggro, c_aggro); }
+		else if (c_result == 4) { printf("시민 2 : 제자리 %d ( 어그로 : %d -> %d )\n", c2_pos - 1, c_baggro, c_aggro); }
+		else if (c_result == 5) { printf("시민 0 : %d -> %d ( 어그로 : %d -> %d )\n", c0_bpos - 1, c0_pos - 1, c_baggro, c_aggro); }
+		else if (c_result == 6) { printf("시민 1 : %d -> %d ( 어그로 : %d -> %d )\n", c1_bpos - 1, c1_pos - 1, c_baggro, c_aggro); }
+		else if (c_result == 7) { printf("시민 2 : %d -> %d ( 어그로 : %d -> %d )\n", c2_bpos - 1, c2_pos - 1, c_baggro, c_aggro); }
 	}
 	else {
 		if (c_result == 0) { printf("시민 : 제자리 %d ( 어그로 : %d -> %d )\n", c2_pos - 1, c_baggro, c_aggro); }
